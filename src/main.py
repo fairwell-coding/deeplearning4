@@ -6,9 +6,9 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from matplotlib import pyplot as plt
 import numpy as np
+from sklearn.model_selection import train_test_split
 
-
-
+RANDOM_STATE = 42
 
 #Load data
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
@@ -28,6 +28,8 @@ x_test_transformed = x_test.reshape((x_test.shape[0], 28, 28, 1))
 x_train_transformed = (x_train_transformed.astype('float32')) / 255.0
 x_test_transformed = (x_test_transformed.astype('float32')) / 255.0
 
+
+x_train_transformed, x_val_transformed, y_train_transformed, y_val_transformed = train_test_split(x_train_transformed, y_train_transformed, test_size=0.2, random_state=RANDOM_STATE)
 
 #Configure the model
 
@@ -65,8 +67,9 @@ model.compile(loss=tf.keras.losses.MSE , optimizer='adam', metrics=['accuracy'])
 model.summary()
 
 #Train and evaluate the model
-training_error = model.fit(x_train_transformed, x_train_transformed, epochs=100, batch_size=64, validation_split=0.2)
-testing_error = model.evaluate(x_test_transformed, y_test_transformed, batch_size=64)
+es = EarlyStopping(monitor='val_accuracy', mode='max', patience=2)
+training_error = model.fit(x_train_transformed, x_train_transformed, epochs=100, batch_size=64, validation_split=0.2, callbacks=[es])
+testing_error = model.evaluate(x_val_transformed, x_val_transformed, batch_size=64)
 
 
 #Print the final training error, validation error and test accuracy
