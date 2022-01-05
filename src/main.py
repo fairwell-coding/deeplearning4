@@ -108,6 +108,16 @@ def __create_perturbed_data_set():
         pickle.dump(data, file)
 
 
+#stddev: 0 - 1, useful range: 0.5 - 0.01
+def __add_gaussian_noise(image, stddev):
+    noise = tf.random.normal(shape=tf.shape(image), mean=0.0, stddev=stddev, dtype=tf.float32)
+    return tf.add(image, noise)
+
+#brightness_change: -1 - 1, useful range: -0.5 - 0.5
+def __change_brightness(image, brightness_change):
+    return np.clip(image + brightness_change , 0, 1)
+
+
 if __name__ == '__main__':
     # __train_autoencoder()
     __create_perturbed_data_set()
