@@ -103,19 +103,57 @@ def __create_perturbed_data_set():
     # 4. rotation Clemens
     # 5. horizontal/vertical flip Clemens
 
-    data = None
-    with open('./perturbed_fashion_mnist', mode='wb') as file:
-        pickle.dump(data, file)
+    # Test calls for perturbation
+    __add_black_square_patch(x_train_transformed[3].reshape(28, 28, 1), 5)
+    __change_brightness(x_train_transformed[3].reshape(28, 28, 1), brightness_change=0.2)
+    __change_brightness(x_train_transformed[3].reshape(28, 28, 1), stddev=0.5)
+
+    # data = None
+    # with open('./perturbed_fashion_mnist', mode='wb') as file:
+    #     pickle.dump(data, file)
 
 
-#stddev: 0 - 1, useful range: 0.5 - 0.01
+def __add_black_square_patch(image: np.ndarray, size: int):
+    """ Overlay a black square patch with given size at a random location over the image.
+
+    :param image: image as 3dim-tensor
+    :param size: size of black square (width & height)
+    :return: modified image with black square patch as overlay
+    """
+
+    x_coordinate = int(np.floor(np.random.uniform(0, image.shape[0] + 1 - size)))
+    y_coordinate = int(np.floor(np.random.uniform(0, image.shape[0] + 1 - size)))
+
+    image[x_coordinate:x_coordinate + size, y_coordinate:y_coordinate + size] = 0.0  # overlay black square patch
+
+    return image
+
+
 def __add_gaussian_noise(image, stddev):
+    """ Adds Gaussian noise to image by given standard deviation (possible range between 0 and 1, useful range between 0.5 and 0.01).
+
+    :param image: image as 3dim-tensor
+    :param stddev: standard deviation
+    :return: modified image with added Gaussian noise
+    """
     noise = tf.random.normal(shape=tf.shape(image), mean=0.0, stddev=stddev, dtype=tf.float32)
+
     return tf.add(image, noise)
 
-#brightness_change: -1 - 1, useful range: -0.5 - 0.5
-def __change_brightness(image, brightness_change):
-    return np.clip(image + brightness_change , 0, 1)
+
+def __change_brightness(image, brightness_change=None, stddev=None):
+    """ Change brightness of image by either providing fixed normalized change or by drawing from a normal distribution.
+
+    :param image: image as 3dim-tensor
+    :param brightness_change: fixed brightness value of normalized image (values between 0 and 1)
+    :param stddev: standard deviation for brightness (cut-off at 1)
+    :return modified image with adjusted brightness
+    """
+
+    if not brightness_change:
+        brightness_change = np.random.normal(0.0, stddev)
+
+    return np.clip(image + brightness_change, 0, 1)
 
 
 if __name__ == '__main__':
