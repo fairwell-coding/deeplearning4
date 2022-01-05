@@ -97,6 +97,11 @@ def __create_perturbed_data_set():
     x_train_transformed, x_val_transformed, y_train_transformed, y_val_transformed = train_test_split(x_train_transformed, y_train_transformed, test_size=0.2, random_state=RANDOM_STATE)
 
     # TODO
+    # 1. Gaussian noise Sebastian
+    # 2. occlusion of image part: black square Philipp
+    # 3. brightness Sebastian
+    # 4. rotation Clemens
+    # 5. horizontal/vertical flip Clemens
 
     data = None
     with open('./perturbed_fashion_mnist', mode='wb') as file:
