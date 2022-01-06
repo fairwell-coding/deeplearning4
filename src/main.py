@@ -9,6 +9,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.model_selection import train_test_split
+from scipy.ndimage import rotate
 
 RANDOM_STATE = 42
 
@@ -104,9 +105,12 @@ def __create_perturbed_data_set():
     # 5. horizontal/vertical flip Clemens
 
     # Test calls for perturbation
-    __add_black_square_patch(x_train_transformed[3].reshape(28, 28, 1), 5)
-    __change_brightness(x_train_transformed[3].reshape(28, 28, 1), brightness_change=0.2)
-    __change_brightness(x_train_transformed[3].reshape(28, 28, 1), stddev=0.5)
+    #__add_black_square_patch(x_train_transformed[3].reshape(28, 28, 1), 5)
+    #__change_brightness(x_train_transformed[3].reshape(28, 28, 1), brightness_change=0.2)
+    #__change_brightness(x_train_transformed[3].reshape(28, 28, 1), stddev=0.5)
+    #__rotate_image(x_train_transformed[3].reshape(28, 28, 1), max_angle=180)
+    #__flip_image(x_train_transformed[3].reshape(28, 28, 1), vertical=True)
+    #__flip_image(x_train_transformed[3].reshape(28, 28, 1), horizontal=True)
 
     # data = None
     # with open('./perturbed_fashion_mnist', mode='wb') as file:
@@ -154,6 +158,34 @@ def __change_brightness(image, brightness_change=None, stddev=None):
         brightness_change = np.random.normal(0.0, stddev)
 
     return np.clip(image + brightness_change, 0, 1)
+
+
+def __rotate_image(image, max_angle):
+    """ Rotate image by angle drawn from normal distribution
+
+    :param image: image as 3dim-tensor
+    :param max_angle: maximum rotation angle
+    :return rotateted image
+    """
+    angle = np.random.uniform(-max_angle, max_angle)
+    rotated = rotate(image, angle, reshape=False)
+    return rotated
+
+
+def __flip_image(image, horizontal=False, vertical=False):
+    """ Flip image either by horizontal or vertical axis
+
+    :param image: image as 3dim-tensor
+    :param horizontal: perform horizontal flip
+    :param vertical: perform vertical flip
+    :return flipped image
+    """
+    if horizontal == True:
+        flipped = np.flipud(image)
+    elif vertical == True:
+        flipped = np.fliplr(image)
+
+    return flipped
 
 
 if __name__ == '__main__':
