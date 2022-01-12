@@ -116,6 +116,20 @@ def __create_perturbed_data_set():
     # with open('./perturbed_fashion_mnist', mode='wb') as file:
     #     pickle.dump(data, file)
 
+    for index in range(len(x_train_transformed)):
+        if(index % 5 == 0):
+            __add_black_square_patch(x_train_transformed[index].reshape(28, 28, 1), np.random.)
+        if(index % 5 == 1):
+            __change_brightness(x_train_transformed[index].reshape(28, 28, 1), brightness_change=0.2)
+        if(index % 5 == 2):
+            __rotate_image(x_train_transformed[index].reshape(28, 28, 1), max_angle=180)
+        if(index % 5 == 3):
+            __flip_image(x_train_transformed[index].reshape(28, 28, 1), vertical=True)
+        if(index % 5 == 4):
+            __flip_image(x_train_transformed[index].reshape(28, 28, 1), horizontal=True)
+
+
+
 
 def __add_black_square_patch(image: np.ndarray, size: int):
     """ Overlay a black square patch with given size at a random location over the image.
