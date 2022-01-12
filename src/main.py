@@ -12,13 +12,12 @@ import os
 RANDOM_STATE = 42
 #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'      #pls dont delete this
 
-
 def __train_autoencoder(perturbed_data_set):
 
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
-    model, training_error = __base_model(x_train_transformed)
-    testing_error = model.evaluate(x_val_transformed, x_val_transformed, batch_size=64)
+    model, training_error = __base_model(x_train_perturb, x_train_transformed)
+    testing_error = model.evaluate(x_val_perturb, x_val_transformed, batch_size=64)
 
     # Print the final training error, validation error and test accuracy
     print('Training error: '"{:.2f}".format(training_error.history['loss'][-1]) + " Validation error: " + "{:.2f}".format(training_error.history['val_loss'][-1]))
@@ -152,9 +151,9 @@ def __flip_image(image, horizontal=False, vertical=False):
 
     return flipped
 
+#accuracy: 0.4822 - val_accuracy: 0.4756
+def __base_model(x_train_perturb, x_train_transformed):
 
-def __base_model(x_train_transformed):
-    # Configure the model
     model = Sequential()
 
     # encoder
@@ -185,7 +184,7 @@ def __base_model(x_train_transformed):
 
     # Train and evaluate the model
     es = EarlyStopping(monitor='val_accuracy', mode='max', patience=2)
-    training_error = model.fit(x_train_transformed, x_train_transformed, epochs=100, batch_size=64, callbacks=[es])
+    training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=64, validation_split=0.2, callbacks=[es])
     return model, training_error
 
 
