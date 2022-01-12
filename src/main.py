@@ -82,6 +82,8 @@ def __train_autoencoder():
 
 
 def __create_perturbed_data_set():
+    np.random.seed(RANDOM_STATE)
+
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
 
     # Convert to one-out-of-K encoding
@@ -97,38 +99,32 @@ def __create_perturbed_data_set():
     x_test_transformed = (x_test_transformed.astype('float32')) / 255.0
     x_train_transformed, x_val_transformed, y_train_transformed, y_val_transformed = train_test_split(x_train_transformed, y_train_transformed, test_size=0.2, random_state=RANDOM_STATE)
 
-    # TODO
-    # 1. Gaussian noise Sebastian
-    # 2. occlusion of image part: black square Philipp
-    # 3. brightness Sebastian
-    # 4. rotation Clemens
-    # 5. horizontal/vertical flip Clemens
+    x_train_perturb = __create_perturb_data(x_train_transformed)
+    x_val_perturb = __create_perturb_data(x_val_transformed)
+    x_test_perturb = __create_perturb_data(x_test_transformed)
 
-    # Test calls for perturbation
-    #__add_black_square_patch(x_train_transformed[3].reshape(28, 28, 1), 5)
-    #__change_brightness(x_train_transformed[3].reshape(28, 28, 1), brightness_change=0.2)
-    #__change_brightness(x_train_transformed[3].reshape(28, 28, 1), stddev=0.5)
-    #__rotate_image(x_train_transformed[3].reshape(28, 28, 1), max_angle=180)
-    #__flip_image(x_train_transformed[3].reshape(28, 28, 1), vertical=True)
-    #__flip_image(x_train_transformed[3].reshape(28, 28, 1), horizontal=True)
-
-    # data = None
-    # with open('./perturbed_fashion_mnist', mode='wb') as file:
-    #     pickle.dump(data, file)
-
-    for index in range(len(x_train_transformed)):
-        if(index % 5 == 0):
-            __add_black_square_patch(x_train_transformed[index].reshape(28, 28, 1), np.random.)
-        if(index % 5 == 1):
-            __change_brightness(x_train_transformed[index].reshape(28, 28, 1), brightness_change=0.2)
-        if(index % 5 == 2):
-            __rotate_image(x_train_transformed[index].reshape(28, 28, 1), max_angle=180)
-        if(index % 5 == 3):
-            __flip_image(x_train_transformed[index].reshape(28, 28, 1), vertical=True)
-        if(index % 5 == 4):
-            __flip_image(x_train_transformed[index].reshape(28, 28, 1), horizontal=True)
+    return x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb
 
 
+def __create_perturb_data(data_set: np.ndarray):
+    perturb_data = np.empty(data_set.shape)
+
+    for index in range(len(data_set)):
+        image = data_set[index].reshape(28, 28, 1)
+        if index % 6 == 0:
+            perturb_data[index] = __add_black_square_patch(image, int(np.random.uniform(3, 6)))
+        if index % 6 == 1:
+            perturb_data[index] = __change_brightness(image, brightness_change=np.random.uniform(-0.5, 0.5))
+        if index % 6 == 2:
+            perturb_data[index] = __rotate_image(image, max_angle=180)
+        if index % 6 == 3:
+            perturb_data[index] = __flip_image(image, vertical=True)
+        if index % 6 == 4:
+            perturb_data[index] = __flip_image(image, horizontal=True)
+        if index % 6 == 5:
+            perturb_data[index] = __add_gaussian_noise(image, 0.2)
+
+    return perturb_data
 
 
 def __add_black_square_patch(image: np.ndarray, size: int):
@@ -154,16 +150,16 @@ def __add_gaussian_noise(image, stddev):
     :param stddev: standard deviation
     :return: modified image with added Gaussian noise
     """
-    noise = tf.random.normal(shape=tf.shape(image), mean=0.0, stddev=stddev, dtype=tf.float32)
 
-    return tf.add(image, noise)
+    noise = np.random.normal(0.0, stddev, size=28*28).reshape(image.shape)
+    return np.clip(image + noise, 0, 1)
 
 
 def __change_brightness(image, brightness_change=None, stddev=None):
     """ Change brightness of image by either providing fixed normalized change or by drawing from a normal distribution.
 
     :param image: image as 3dim-tensor
-    :param brightness_change: fixed brightness value of normalized image (values between 0 and 1)
+    :param brightness_change: fixed brightness value of normalized image (useful range between -0.5 and 0.5)
     :param stddev: standard deviation for brightness (cut-off at 1)
     :return modified image with adjusted brightness
     """
