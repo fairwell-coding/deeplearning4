@@ -16,7 +16,7 @@ def __train_autoencoder(perturbed_data_set):
 
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
-    model, training_error = __base_model(x_train_perturb, x_train_transformed)
+    model, training_error = __model_1(x_train_perturb, x_train_transformed)
     testing_error = model.evaluate(x_val_perturb, x_val_transformed, batch_size=64)
 
     # Print the final training error, validation error and test accuracy
@@ -32,6 +32,15 @@ def __train_autoencoder(perturbed_data_set):
     plt.legend(['Training error', 'Validation error'], loc='upper right')
     plt.annotate('Test error: ' + "{:.2f}".format(testing_error[0]) + ' Test accuracy: ' + "{:.4f}".format(testing_error[1]), (0, 0), (0, -20), xycoords='axes fraction', textcoords='offset points',
                  va='top', color='red')
+    plt.show()
+
+    #Show results for one image
+    pred = model.predict(x_test_transformed)
+    plt.imshow(x_test_perturb[100])
+    plt.show()
+    plt.imshow(pred[100])
+    plt.show()
+    plt.imshow(x_test_transformed[100])
     plt.show()
 
 
@@ -151,7 +160,7 @@ def __flip_image(image, horizontal=False, vertical=False):
 
     return flipped
 
-#accuracy: 0.4822 - val_accuracy: 0.4756
+#loss: 0.0787 - accuracy: 0.4784 - val_loss: 0.0800 - val_accuracy: 0.4651
 def __base_model(x_train_perturb, x_train_transformed):
 
     model = Sequential()
@@ -176,6 +185,47 @@ def __base_model(x_train_perturb, x_train_transformed):
     model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
     model.add(BatchNormalization())
     model.add(UpSampling2D((2, 2)))
+    model.add(Conv2D(1, (3, 3), activation='relu', padding='same'))
+
+    # Configure the model training procedure
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
+    model.summary()
+
+    # Train and evaluate the model
+    es = EarlyStopping(monitor='val_accuracy', mode='max', patience=2)
+    training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=64, validation_split=0.2, callbacks=[es])
+    return model, training_error
+
+#Added more convolutional layers to base model
+#loss: 0.0565 - accuracy: 0.4890 - val_loss: 0.0568 - val_accuracy: 0.4869
+def __model_1(x_train_perturb, x_train_transformed):
+
+    model = Sequential()
+
+    # encoder
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(BatchNormalization())
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(BatchNormalization())
+    model.add(Flatten())
+    model.add(Dense(1, activation='relu'))
+
+    # decoder
+    model.add(Dense(4, activation='relu'))
+    model.add(Reshape((2, 2, 1)))
+    model.add(Conv2D(4, (2, 2), activation='relu', padding='same'))
+    model.add(Conv2D(16, (2, 2), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(UpSampling2D((7, 7)))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(UpSampling2D((2, 2)))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
     model.add(Conv2D(1, (3, 3), activation='relu', padding='same'))
 
     # Configure the model training procedure
