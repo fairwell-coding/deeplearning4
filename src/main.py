@@ -31,38 +31,7 @@ def __train_autoencoder():
     x_test_transformed = (x_test_transformed.astype('float32')) / 255.0
     x_train_transformed, x_val_transformed, y_train_transformed, y_val_transformed = train_test_split(x_train_transformed, y_train_transformed, test_size=0.2, random_state=RANDOM_STATE)
 
-    # Configure the model
-    model = Sequential()
-
-    # encoder
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(BatchNormalization())
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(BatchNormalization())
-    model.add(Flatten())
-    model.add(Dense(1, activation='relu'))
-
-    # decoder
-    model.add(Dense(4, activation='relu'))
-    model.add(Reshape((2, 2, 1)))
-    model.add(Conv2D(4, (2, 2), activation='relu', padding='same'))
-    model.add(Conv2D(16, (2, 2), activation='relu', padding='same'))
-    model.add(BatchNormalization())
-    model.add(UpSampling2D((7, 7)))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(BatchNormalization())
-    model.add(UpSampling2D((2, 2)))
-    model.add(Conv2D(1, (3, 3), activation='relu', padding='same'))
-
-    # Configure the model training procedure
-    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
-    model.summary()
-
-    # Train and evaluate the model
-    es = EarlyStopping(monitor='val_accuracy', mode='max', patience=2)
-    training_error = model.fit(x_train_transformed, x_train_transformed, epochs=100, batch_size=64, callbacks=[es])
+    model, training_error = __base_model(x_train_transformed)
     testing_error = model.evaluate(x_val_transformed, x_val_transformed, batch_size=64)
 
     # Print the final training error, validation error and test accuracy
@@ -196,6 +165,42 @@ def __flip_image(image, horizontal=False, vertical=False):
         flipped = np.fliplr(image)
 
     return flipped
+
+
+def __base_model(x_train_transformed):
+    # Configure the model
+    model = Sequential()
+
+    # encoder
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(BatchNormalization())
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(BatchNormalization())
+    model.add(Flatten())
+    model.add(Dense(1, activation='relu'))
+
+    # decoder
+    model.add(Dense(4, activation='relu'))
+    model.add(Reshape((2, 2, 1)))
+    model.add(Conv2D(4, (2, 2), activation='relu', padding='same'))
+    model.add(Conv2D(16, (2, 2), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(UpSampling2D((7, 7)))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(UpSampling2D((2, 2)))
+    model.add(Conv2D(1, (3, 3), activation='relu', padding='same'))
+
+    # Configure the model training procedure
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
+    model.summary()
+
+    # Train and evaluate the model
+    es = EarlyStopping(monitor='val_accuracy', mode='max', patience=2)
+    training_error = model.fit(x_train_transformed, x_train_transformed, epochs=100, batch_size=64, callbacks=[es])
+    return model, training_error
 
 
 if __name__ == '__main__':
