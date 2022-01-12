@@ -1,35 +1,21 @@
-import pickle
-
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, Dropout, MaxPooling2D, GaussianNoise, BatchNormalization, Reshape, UpSampling2D
 from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.model_selection import train_test_split
 from scipy.ndimage import rotate
+import os
 
 RANDOM_STATE = 42
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'      #pls dont delete this
 
 
-def __train_autoencoder():
-    # Load data
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
+def __train_autoencoder(perturbed_data_set):
 
-    # Convert to one-out-of-K encoding
-    y_train_transformed = to_categorical(y_train, num_classes=10)
-    y_test_transformed = to_categorical(y_test, num_classes=10)
-
-    # Images are grayscale with size 28x28 -> reshape them that they only have a single color channel
-    x_train_transformed = x_train.reshape((x_train.shape[0], 28, 28, 1))
-    x_test_transformed = x_test.reshape((x_test.shape[0], 28, 28, 1))
-
-    # Normalize data, grayscale images have values in range 0-255 -> convert to 0-1
-    x_train_transformed = (x_train_transformed.astype('float32')) / 255.0
-    x_test_transformed = (x_test_transformed.astype('float32')) / 255.0
-    x_train_transformed, x_val_transformed, y_train_transformed, y_val_transformed = train_test_split(x_train_transformed, y_train_transformed, test_size=0.2, random_state=RANDOM_STATE)
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
     model, training_error = __base_model(x_train_transformed)
     testing_error = model.evaluate(x_val_transformed, x_val_transformed, batch_size=64)
@@ -204,5 +190,5 @@ def __base_model(x_train_transformed):
 
 
 if __name__ == '__main__':
-    # __train_autoencoder()
-    __create_perturbed_data_set()
+    perturbed_data_set = __create_perturbed_data_set()
+    __train_autoencoder(perturbed_data_set)
