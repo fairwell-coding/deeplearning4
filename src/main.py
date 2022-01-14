@@ -10,6 +10,8 @@ from scipy.ndimage import rotate
 import os
 
 RANDOM_STATE = 42
+DATA_PATH = "../data/"
+
 #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'      #pls dont delete this
 
 def __train_autoencoder(perturbed_data_set):
@@ -42,10 +44,24 @@ def __train_autoencoder(perturbed_data_set):
     plt.show()
 
 
-def __create_perturbed_data_set():
+def __create_perturbed_data_set(load_kuzushiji = False):
     np.random.seed(RANDOM_STATE)
 
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
+    if load_kuzushiji:
+        with np.load(DATA_PATH + "x_train.npz", allow_pickle=True) as train_data:
+            x_train = train_data[train_data.files[0]]
+
+        with np.load(DATA_PATH + "y_train.npz", allow_pickle=True) as train_labels:
+            y_train = train_labels[train_labels.files[0]]
+
+        with np.load(DATA_PATH + "x_test.npz", allow_pickle=True) as test_data:
+            x_test = test_data[test_data.files[0]]
+
+        with np.load(DATA_PATH + "y_test.npz", allow_pickle=True) as test_labels:
+            y_test = test_labels[test_labels.files[0]]
+
+    else:    
+        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
 
     # Convert to one-out-of-K encoding
     y_train_transformed = to_categorical(y_train, num_classes=10)
@@ -70,10 +86,10 @@ def __create_perturbed_data_set():
 def __create_perturb_data(data_set: np.ndarray):
     perturb_data = np.empty(data_set.shape)
 
-    for index in range(len(data_set)):
+    for index in range(len(data_set))[0:40]:
         image = data_set[index].reshape(28, 28, 1)
         if index % 6 == 0:
-            perturb_data[index] = __add_black_square_patch(image, int(np.random.uniform(3, 6)))
+            perturb_data[index] = __add_black_square_patch(image, int(np.random.uniform(3, 10)))
         if index % 6 == 1:
             perturb_data[index] = __change_brightness(image, brightness_change=np.random.uniform(-0.5, 0.5))
         if index % 6 == 2:
@@ -373,5 +389,5 @@ def __model_4(x_train_perturb, x_train_transformed):
     return model, training_error
 
 if __name__ == '__main__':
-    perturbed_data_set = __create_perturbed_data_set()
+    perturbed_data_set = __create_perturbed_data_set(load_kuzushiji=False)  # set flag to true to load kuzushiji data
     __train_autoencoder(perturbed_data_set)
