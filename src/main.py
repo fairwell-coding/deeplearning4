@@ -86,10 +86,10 @@ def __create_perturbed_data_set(load_kuzushiji = False):
 def __create_perturb_data(data_set: np.ndarray):
     perturb_data = np.empty(data_set.shape)
 
-    for index in range(len(data_set))[0:40]:
+    for index in range(len(data_set)):
         image = data_set[index].reshape(28, 28, 1)
         if index % 6 == 0:
-            perturb_data[index] = __add_black_square_patch(image, int(np.random.uniform(3, 10)))
+            perturb_data[index] = __add_black_square_patch(image, int(np.random.uniform(3, 6)))
         if index % 6 == 1:
             perturb_data[index] = __change_brightness(image, brightness_change=np.random.uniform(-0.5, 0.5))
         if index % 6 == 2:
