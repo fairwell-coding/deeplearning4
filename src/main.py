@@ -19,13 +19,13 @@ RANDOM_STATE = 42
 DATA_PATH = "../data/"
 
 
-#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'      #pls dont delete this
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
 def __train_autoencoder(perturbed_data_set):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
-    model, training_error = __model_3(x_train_perturb,  x_train_transformed)
+    model, training_error = __model_4(x_train_perturb,  x_train_transformed)
     #model, training_error = __model_15(perturbed_data_set)
     testing_error = model.evaluate(x_test_perturb, x_test_transformed, batch_size=512)
 
@@ -303,7 +303,7 @@ def __model_2(x_train_perturb, x_train_transformed):
 
 
 # Added another conv layer with normalization to model_2
-# loss: 0.0877 - accuracy: 0.4893 - val_loss: 0.0882 - val_accuracy: 0.4942
+# Training loss: 0.1090 Validation loss: 0.1091 Test loss: 0.1053
 def __model_3(x_train_perturb, x_train_transformed):
     model = Sequential()
 
@@ -352,7 +352,7 @@ def __model_3(x_train_perturb, x_train_transformed):
 
 
 # Model 2 with Conv2DTranspose instead of Conv2D on the decoder
-# loss: 0.0877 - accuracy: 0.4891 - val_loss: 0.0875 - val_accuracy: 0.4927
+# Training loss: 0.1111 Validation loss: 0.1127 Test loss: 0.1080
 def __model_4(x_train_perturb, x_train_transformed):
     model = Sequential()
 
