@@ -19,18 +19,18 @@ RANDOM_STATE = 42
 DATA_PATH = "../data/"
 
 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'      #pls dont delete this
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'      #pls dont delete this
 
 
 def __train_autoencoder(perturbed_data_set):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
-    # model, training_error = __model_14(x_val_transformed, x_train_transformed)
-    model, training_error = __model_15(perturbed_data_set)
+    model, training_error = __model_3(x_train_perturb,  x_train_transformed)
+    #model, training_error = __model_15(perturbed_data_set)
     testing_error = model.evaluate(x_test_perturb, x_test_transformed, batch_size=512)
 
     # Print the final training error, validation error and test accuracy
-    print('Training loss: '"{:.2f}".format(training_error.history['loss'][-1]) + " Validation loss: " + "{:.2f}".format(training_error.history['val_loss'][-1]))
+    print('Training loss: '"{:.4f}".format(training_error.history['loss'][-1]) + " Validation loss: " + "{:.4f}".format(training_error.history['val_loss'][-1]))
     print('Test loss: ' + "{:.4f}".format(testing_error))
 
     # Plot the evolution of the error during training
@@ -54,24 +54,20 @@ def __train_autoencoder(perturbed_data_set):
     plt.show()
 
 
-def __create_perturbed_data_set(load_kuzushiji=False):
+def __create_perturbed_data_set():
     np.random.seed(RANDOM_STATE)
 
-    if load_kuzushiji:
-        with np.load(DATA_PATH + "x_train.npz", allow_pickle=True) as train_data:
-            x_train = train_data[train_data.files[0]]
+    with np.load(DATA_PATH + "x_train.npz", allow_pickle=True) as train_data:
+        x_train = train_data[train_data.files[0]]
 
-        with np.load(DATA_PATH + "y_train.npz", allow_pickle=True) as train_labels:
-            y_train = train_labels[train_labels.files[0]]
+    with np.load(DATA_PATH + "y_train.npz", allow_pickle=True) as train_labels:
+        y_train = train_labels[train_labels.files[0]]
 
-        with np.load(DATA_PATH + "x_test.npz", allow_pickle=True) as test_data:
-            x_test = test_data[test_data.files[0]]
+    with np.load(DATA_PATH + "x_test.npz", allow_pickle=True) as test_data:
+        x_test = test_data[test_data.files[0]]
 
-        with np.load(DATA_PATH + "y_test.npz", allow_pickle=True) as test_labels:
-            y_test = test_labels[test_labels.files[0]]
-
-    else:
-        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
+    with np.load(DATA_PATH + "y_test.npz", allow_pickle=True) as test_labels:
+        y_test = test_labels[test_labels.files[0]]
 
     # Convert to one-out-of-K encoding
     y_train_transformed = to_categorical(y_train, num_classes=10)
@@ -185,7 +181,7 @@ def __flip_image(image, horizontal=False, vertical=False):
     return flipped
 
 
-# loss: 0.0787 - accuracy: 0.4784 - val_loss: 0.0800 - val_accuracy: 0.4651
+# Training loss: 0.10 Validation loss: 0.10 Test loss: 0.0997
 def __base_model(x_train_perturb, x_train_transformed):
     model = Sequential()
 
@@ -212,17 +208,17 @@ def __base_model(x_train_perturb, x_train_transformed):
     model.add(Conv2D(1, (3, 3), activation='relu', padding='same'))
 
     # Configure the model training procedure
-    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
     model.summary()
 
     # Train and evaluate the model
-    es = EarlyStopping(monitor='val_accuracy', mode='max', patience=2)
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=2)
     training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=64, validation_split=0.2, callbacks=[es])
     return model, training_error
 
 
 # Added more convolutional layers to base model
-# loss: 0.0565 - accuracy: 0.4890 - val_loss: 0.0568 - val_accuracy: 0.4869
+# Training loss: 0.09 Validation loss: 0.09 Test loss: 0.0946
 def __model_1(x_train_perturb, x_train_transformed):
     model = Sequential()
 
@@ -253,17 +249,17 @@ def __model_1(x_train_perturb, x_train_transformed):
     model.add(Conv2D(1, (3, 3), activation='relu', padding='same'))
 
     # Configure the model training procedure
-    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
     model.summary()
 
     # Train and evaluate the model
-    es = EarlyStopping(monitor='val_accuracy', mode='max', patience=2)
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=2)
     training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=64, validation_split=0.2, callbacks=[es])
     return model, training_error
 
 
-# Added more dense layers to model_1, changed early stopping to val_loss which seems to work better
-# loss: 0.0515 - accuracy: 0.4925 - val_loss: 0.0535 - val_accuracy: 0.4947
+# Added more dense layers to model_1
+# Training loss: 0.0908 Validation loss: 0.0917 Test loss: 0.0922
 def __model_2(x_train_perturb, x_train_transformed):
     model = Sequential()
 
@@ -297,7 +293,7 @@ def __model_2(x_train_perturb, x_train_transformed):
     model.add(Conv2D(1, (3, 3), activation='relu', padding='same'))
 
     # Configure the model training procedure
-    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
     model.summary()
 
     # Train and evaluate the model
@@ -346,7 +342,7 @@ def __model_3(x_train_perturb, x_train_transformed):
     model.add(Conv2D(1, (3, 3), activation='relu', padding='same'))
 
     # Configure the model training procedure
-    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
     model.summary()
 
     # Train and evaluate the model
@@ -390,7 +386,7 @@ def __model_4(x_train_perturb, x_train_transformed):
     model.add(Conv2D(1, (3, 3), activation='relu', padding='same'))
 
     # Configure the model training procedure
-    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
     model.summary()
 
     # Train and evaluate the model
@@ -1028,5 +1024,5 @@ def __model_15(data: Tuple[np.ndarray]):
 
 
 if __name__ == '__main__':
-    perturbed_data_set = __create_perturbed_data_set(load_kuzushiji=True)  # set flag to true to load kuzushiji data
+    perturbed_data_set = __create_perturbed_data_set()
     __train_autoencoder(perturbed_data_set)
