@@ -26,7 +26,7 @@ def __train_autoencoder(perturbed_data_set):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
     #model, training_error = __model_4(x_train_perturb,  x_train_transformed)
-    model, training_error = __model_11(perturbed_data_set)
+    model, training_error = __model_14(perturbed_data_set)
     testing_error = model.evaluate(x_test_perturb, x_test_transformed, batch_size=512)
 
     # Print the final training error, validation error and test accuracy
@@ -827,11 +827,12 @@ def __model_11(data):
     return model, training_error
 
 
-# Model 12 just train with original data -> image should be reproduced well enough
-# this better again -> output gets more similar
-# val accuracy: 0.6728, val loss: 0.0896
-# train_accuracy: 0.6748, train loss: 0.0853
-def __model_12(x_val_transformed, x_train_transformed):
+# Model 12 deepest network until now, works the best
+# val loss: 0.0744
+# train loss: 0.0717
+# test loss: 0.0799
+def __model_12(data):
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
     model = Sequential()
 
     # encoder
@@ -840,128 +841,10 @@ def __model_12(x_val_transformed, x_train_transformed):
     model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
     model.add(MaxPooling2D((2, 2)))
     model.add(BatchNormalization())
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(BatchNormalization())
-    model.add(Flatten())
-    model.add(Dense(49, activation='relu'))
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(16, activation='relu'))
-
-    model.add(Dense(3, activation='relu'))
-
-    # decoder
-    model.add(Dense(16, activation='relu'))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(49, activation='relu'))
-    model.add(Reshape((7, 7, 1)))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(BatchNormalization())
-    model.add(UpSampling2D((2, 2)))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(BatchNormalization())
-    model.add(UpSampling2D((2, 2)))
-    model.add(Conv2DTranspose(1, (3, 3), activation='linear', padding='same'))
-
-    # Configure the model training procedure
-    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
-    model.summary()
-
-    # Train and evaluate the model
-    es = EarlyStopping(monitor='val_loss', mode='min', patience=4, restore_best_weights=True)
-    training_error = model.fit(x_train_transformed, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_transformed, x_val_transformed), callbacks=[es])
-
-    pred = model.predict(x_val_transformed)
-    plt.figure()
-    plt.imshow(x_val_transformed[100])
-    plt.figure()
-    plt.imshow(pred[100])
-    plt.show()
-
-    return model, training_error
-
-
-# Model 13 just train with original data -> image should be reproduced well enough
-# validation se loss just increased ->x doesn't work well
-# val accuracy: 0.6701, val loss: 0.1413
-# train_accuracy: 0.6696, train loss: 0.1116
-def __model_13(x_val_transformed, x_train_transformed):
-    model = Sequential()
-
-    # encoder
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(BatchNormalization())
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(BatchNormalization())
-    model.add(Flatten())
-    model.add(Dense(49, activation='relu'))
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(20, activation='relu'))
-    model.add(Dense(16, activation='relu'))
-
-    model.add(Dense(3, activation='relu'))
-
-    # decoder
-    model.add(Dense(16, activation='relu'))
-    model.add(Dense(20, activation='relu'))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(49, activation='relu'))
-    model.add(Reshape((7, 7, 1)))
-    model.add(BatchNormalization())
-    model.add(UpSampling2D((2, 2)))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(BatchNormalization())
-    model.add(UpSampling2D((2, 2)))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(1, (3, 3), activation='linear', padding='same'))
-
-    # Configure the model training procedure
-    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
-    model.summary()
-
-    # Train and evaluate the model
-    es = EarlyStopping(monitor='val_loss', mode='min', patience=4, restore_best_weights=True)
-    training_error = model.fit(x_train_transformed, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_transformed, x_val_transformed), callbacks=[es])
-
-    pred = model.predict(x_val_transformed)
-    plt.figure()
-    plt.imshow(x_val_transformed[100])
-    plt.figure()
-    plt.imshow(pred[100])
-    plt.show()
-
-    return model, training_error
-
-
-# Model 14 just train with original data -> image should be reproduced well enough
-# try out larger dense layers -> way better result than before
-# val accuracy: 0.6884, val loss: 0.0702
-# train_accuracy: 0.6883, train loss: 0.0700
-def __model_14(x_val_transformed, x_train_transformed):
-    model = Sequential()
-
-    # encoder
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(BatchNormalization())
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
     model.add(MaxPooling2D((2, 2)))
     model.add(BatchNormalization())
     model.add(Flatten())
@@ -969,10 +852,12 @@ def __model_14(x_val_transformed, x_train_transformed):
     model.add(Dense(40, activation='relu'))
     model.add(Dense(30, activation='relu'))
     model.add(Dense(20, activation='relu'))
+    model.add(Dense(10, activation='relu'))
 
-    model.add(Dense(3, activation='relu'))
+    model.add(Dense(4, activation='relu'))
 
     # decoder
+    model.add(Dense(10, activation='relu'))
     model.add(Dense(20, activation='relu'))
     model.add(Dense(30, activation='relu'))
     model.add(Dense(40, activation='relu'))
@@ -980,28 +865,148 @@ def __model_14(x_val_transformed, x_train_transformed):
     model.add(Reshape((7, 7, 1)))
     model.add(BatchNormalization())
     model.add(UpSampling2D((2, 2)))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
     model.add(BatchNormalization())
     model.add(UpSampling2D((2, 2)))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
     model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
     model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
     model.add(Conv2DTranspose(1, (3, 3), activation='linear', padding='same'))
 
     # Configure the model training procedure
-    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=['accuracy'])
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
     model.summary()
 
     # Train and evaluate the model
-    es = EarlyStopping(monitor='val_loss', mode='min', patience=4, restore_best_weights=True)
-    training_error = model.fit(x_train_transformed, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_transformed, x_val_transformed), callbacks=[es])
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=3)
+    training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
 
-    pred = model.predict(x_val_transformed)
-    plt.figure()
-    plt.imshow(x_val_transformed[100])
-    plt.figure()
-    plt.imshow(pred[100])
-    plt.show()
+    return model, training_error
+
+
+# Model 13 
+# added some regularizers -> still works good but the previous one without regularization was better
+# val loss: 0.0788
+# train loss: 0.0771
+# test loss: 0.0828
+def __model_13(data):
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
+    model = Sequential()
+
+    # encoder
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_regularizer=l2(l2=0.001)))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(BatchNormalization())
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(BatchNormalization())
+    model.add(Flatten())
+    model.add(Dense(49, activation='relu'))
+    model.add(Dense(40, activation='relu'))
+    model.add(Dense(30, activation='relu'))
+    model.add(Dense(20, activation='relu'))
+    model.add(Dense(10, activation='relu'))
+
+    model.add(Dense(4, activation='relu'))
+
+    # decoder
+    model.add(Dense(10, activation='relu'))
+    model.add(Dense(20, activation='relu'))
+    model.add(Dense(30, activation='relu'))
+    model.add(Dense(40, activation='relu'))
+    model.add(Dense(49, activation='relu'))
+    model.add(Reshape((7, 7, 1)))
+    model.add(BatchNormalization())
+    model.add(UpSampling2D((2, 2)))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(UpSampling2D((2, 2)))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same', kernel_regularizer=l2(l2=0.001)))
+    model.add(Conv2DTranspose(1, (3, 3), activation='linear', padding='same'))
+
+    # Configure the model training procedure
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
+    model.summary()
+
+    # Train and evaluate the model
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=3)
+    training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
+
+    return model, training_error
+
+
+# Model 14 
+# added some regularizers -> still works good but the previous one without regularization was better
+# val loss: 0.0755
+# train loss: 0.0730
+# test loss: 0.0817
+def __model_14(data):
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
+    model = Sequential()
+
+    # encoder
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(Dropout(0.1))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(BatchNormalization())
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Dropout(0.1))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(BatchNormalization())
+    model.add(Flatten())
+    model.add(Dense(49, activation='relu'))
+    model.add(Dense(40, activation='relu'))
+    model.add(Dense(30, activation='relu'))
+    model.add(Dense(20, activation='relu'))
+    model.add(Dense(10, activation='relu'))
+
+    model.add(Dense(4, activation='relu'))
+
+    # decoder
+    model.add(Dense(10, activation='relu'))
+    model.add(Dense(20, activation='relu'))
+    model.add(Dense(30, activation='relu'))
+    model.add(Dense(40, activation='relu'))
+    model.add(Dense(49, activation='relu'))
+    model.add(Reshape((7, 7, 1)))
+    model.add(BatchNormalization())
+    model.add(UpSampling2D((2, 2)))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(UpSampling2D((2, 2)))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(1, (3, 3), activation='linear', padding='same'))
+
+    # Configure the model training procedure
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
+    model.summary()
+
+    # Train and evaluate the model
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=3)
+    training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
 
     return model, training_error
 
