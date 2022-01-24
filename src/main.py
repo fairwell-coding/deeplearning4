@@ -1007,6 +1007,10 @@ def __model_14(x_val_transformed, x_train_transformed):
 
 
 def __model_15(data: Tuple[np.ndarray]):
+    """ Different approach base model
+
+        Training loss: 0.1574 - val_loss: 0.1575
+    """
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
 
     # create model
@@ -1081,6 +1085,338 @@ def __model_15(data: Tuple[np.ndarray]):
     # Train and evaluate the model
     es = EarlyStopping(monitor='val_loss', mode='min', patience=4, restore_best_weights=True)
     training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
+
+    return model, training_error
+
+
+def __model_16(data: Tuple[np.ndarray]):
+    """ Reduced batch_size for better convergence. Latent space dimension was initially very low (doubled to 8).
+
+        Training loss: 0.14 Validation loss: 0.14 (6 epochs)
+    """
+
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
+
+    # create model
+    weight_regularizer = L1L2(0.0001)
+    latent_space_dim = 8
+
+    model = Sequential()
+
+    # encoder
+    model.add(Conv2D(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                     kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                     # 3) instead of once (5, 5) is a modern efficient approach)
+                     strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                     padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                     activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                     activity_regularizer=weight_regularizer,
+                     kernel_initializer='he_uniform',  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+                     # 2)/num_inputs
+                     input_shape=(28, 28, 1)))  # needs to be defined since it's the first layer of the network
+    model.add(MaxPooling2D((2, 2), padding='same'))
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+    model.add(Conv2D(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                     kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                     # 3) instead of once (5, 5) is a modern efficient approach)
+                     strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                     padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                     activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                     activity_regularizer=weight_regularizer,
+                     kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(MaxPooling2D((2, 2), padding='same'))
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+    model.add(Flatten())  # flatten convolution output in order to feed into affine layers which learn the classification based on the convoluted learned feature representation in the conv layers
+    model.add(Dense(128, activation='relu', activity_regularizer=weight_regularizer))  # dense layer to allow the network to learn the classification based on the learned convolutional feature
+    # representation
+    model.add(Dropout(0.5))  # typical dropout factor for dense layers
+
+    # latent space
+    model.add(Dense(latent_space_dim, activation='relu'))  # encoder output
+
+    # decoder
+    model.add(Dense(49, activation='relu', activity_regularizer=weight_regularizer))  # set output dimension suitable for reshape dimension
+    model.add(Dropout(0.5))
+    model.add(Reshape((7, 7, 1)))  # inverse operation of flatten in encoder
+    model.add(UpSampling2D((2, 2)))  # inverse operation of MaxPooling2D in encoder
+    model.add(Conv2DTranspose(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                              kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                              # 3) instead of once (5, 5) is a modern efficient approach)
+                              strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                              padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                              activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                              activity_regularizer=weight_regularizer,
+                              kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+    model.add(UpSampling2D((2, 2)))  # inverse operation of MaxPooling2D in encoder
+    model.add(Conv2DTranspose(filters=1,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                              kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                              # 3) instead of once (5, 5) is a modern efficient approach)
+                              strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                              padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                              activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                              activity_regularizer=weight_regularizer,
+                              kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+
+    # Configure the model training procedure
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
+    model.summary()
+
+    # Train and evaluate the model
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=4, restore_best_weights=True)
+    training_error = model.fit(x_train_perturb, x_train_transformed, epochs=25, batch_size=32, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
+
+    return model, training_error
+
+
+def __model_17(data: Tuple[np.ndarray]):
+    """ Doubled latent space dimension again (8 -> 16).
+
+        Training loss: 0.16 Validation loss: 0.16 (12 epochs)
+    """
+
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
+
+    # create model
+    weight_regularizer = L1L2(0.0001)
+    latent_space_dim = 8
+
+    model = Sequential()
+
+    # encoder
+    model.add(Conv2D(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                     kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                     # 3) instead of once (5, 5) is a modern efficient approach)
+                     strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                     padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                     activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                     activity_regularizer=weight_regularizer,
+                     kernel_initializer='he_uniform',  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+                     # 2)/num_inputs
+                     input_shape=(28, 28, 1)))  # needs to be defined since it's the first layer of the network
+    model.add(MaxPooling2D((2, 2), padding='same'))
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+    model.add(Conv2D(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                     kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                     # 3) instead of once (5, 5) is a modern efficient approach)
+                     strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                     padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                     activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                     activity_regularizer=weight_regularizer,
+                     kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(MaxPooling2D((2, 2), padding='same'))
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+    model.add(Flatten())  # flatten convolution output in order to feed into affine layers which learn the classification based on the convoluted learned feature representation in the conv layers
+    model.add(Dense(128, activation='relu', activity_regularizer=weight_regularizer))  # dense layer to allow the network to learn the classification based on the learned convolutional feature
+    # representation
+    model.add(Dropout(0.5))  # typical dropout factor for dense layers
+
+    # latent space
+    model.add(Dense(latent_space_dim, activation='relu'))  # encoder output
+
+    # decoder
+    model.add(Dense(49, activation='relu', activity_regularizer=weight_regularizer))  # set output dimension suitable for reshape dimension
+    model.add(Dropout(0.5))
+    model.add(Reshape((7, 7, 1)))  # inverse operation of flatten in encoder
+    model.add(UpSampling2D((2, 2)))  # inverse operation of MaxPooling2D in encoder
+    model.add(Conv2DTranspose(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                              kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                              # 3) instead of once (5, 5) is a modern efficient approach)
+                              strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                              padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                              activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                              activity_regularizer=weight_regularizer,
+                              kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+    model.add(UpSampling2D((2, 2)))  # inverse operation of MaxPooling2D in encoder
+    model.add(Conv2DTranspose(filters=1,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                              kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                              # 3) instead of once (5, 5) is a modern efficient approach)
+                              strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                              padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                              activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                              activity_regularizer=weight_regularizer,
+                              kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+
+    # Configure the model training procedure
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
+    model.summary()
+
+    # Train and evaluate the model
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=4, restore_best_weights=True)
+    training_error = model.fit(x_train_perturb, x_train_transformed, epochs=25, batch_size=32, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
+
+    return model, training_error
+
+
+def __model_18(data: Tuple[np.ndarray]):
+    """ Doubled latent space dimension again (16 -> 32).
+
+        Training loss: 0.16 Validation loss: 0.16 (16 epochs)
+    """
+
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
+
+    # create model
+    weight_regularizer = L1L2(0.0001)
+    latent_space_dim = 8
+
+    model = Sequential()
+
+    # encoder
+    model.add(Conv2D(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                     kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                     # 3) instead of once (5, 5) is a modern efficient approach)
+                     strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                     padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                     activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                     activity_regularizer=weight_regularizer,
+                     kernel_initializer='he_uniform',  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+                     # 2)/num_inputs
+                     input_shape=(28, 28, 1)))  # needs to be defined since it's the first layer of the network
+    model.add(MaxPooling2D((2, 2), padding='same'))
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+    model.add(Conv2D(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                     kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                     # 3) instead of once (5, 5) is a modern efficient approach)
+                     strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                     padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                     activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                     activity_regularizer=weight_regularizer,
+                     kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(MaxPooling2D((2, 2), padding='same'))
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+    model.add(Flatten())  # flatten convolution output in order to feed into affine layers which learn the classification based on the convoluted learned feature representation in the conv layers
+    model.add(Dense(128, activation='relu', activity_regularizer=weight_regularizer))  # dense layer to allow the network to learn the classification based on the learned convolutional feature
+    # representation
+    model.add(Dropout(0.5))  # typical dropout factor for dense layers
+
+    # latent space
+    model.add(Dense(latent_space_dim, activation='relu'))  # encoder output
+
+    # decoder
+    model.add(Dense(49, activation='relu', activity_regularizer=weight_regularizer))  # set output dimension suitable for reshape dimension
+    model.add(Dropout(0.5))
+    model.add(Reshape((7, 7, 1)))  # inverse operation of flatten in encoder
+    model.add(UpSampling2D((2, 2)))  # inverse operation of MaxPooling2D in encoder
+    model.add(Conv2DTranspose(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                              kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                              # 3) instead of once (5, 5) is a modern efficient approach)
+                              strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                              padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                              activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                              activity_regularizer=weight_regularizer,
+                              kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+    model.add(UpSampling2D((2, 2)))  # inverse operation of MaxPooling2D in encoder
+    model.add(Conv2DTranspose(filters=1,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                              kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                              # 3) instead of once (5, 5) is a modern efficient approach)
+                              strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                              padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                              activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                              activity_regularizer=weight_regularizer,
+                              kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(Dropout(normal(0.2, 0.05)))  # convolutional dropout using normal distribution with mean = 0.2 and std_deviation = 0.05
+
+    # Configure the model training procedure
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
+    model.summary()
+
+    # Train and evaluate the model
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=4, restore_best_weights=True)
+    training_error = model.fit(x_train_perturb, x_train_transformed, epochs=25, batch_size=32, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
+
+    return model, training_error
+
+
+def __model_19(data: Tuple[np.ndarray]):
+    """ latent_space = 8; batch_size = 32; replaced activity regularizer & stochastic dropout with batch normalization
+
+        Training loss: 0.09 Validation loss: 0.14 (7 epochs)
+    """
+
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
+
+    # create model
+    weight_regularizer = L1L2(0.0001)
+    latent_space_dim = 8
+
+    model = Sequential()
+
+    # encoder
+    model.add(Conv2D(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                     kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                     # 3) instead of once (5, 5) is a modern efficient approach)
+                     strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                     padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                     activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                     kernel_initializer='he_uniform',  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+                     # 2)/num_inputs
+                     input_shape=(28, 28, 1)))  # needs to be defined since it's the first layer of the network
+    model.add(MaxPooling2D((2, 2), padding='same'))
+    model.add(BatchNormalization(momentum=0.95, epsilon=0.001))
+    model.add(Conv2D(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                     kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                     # 3) instead of once (5, 5) is a modern efficient approach)
+                     strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                     padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                     activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                     kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(MaxPooling2D((2, 2), padding='same'))
+    model.add(BatchNormalization(momentum=0.95, epsilon=0.001))
+    model.add(Flatten())  # flatten convolution output in order to feed into affine layers which learn the classification based on the convoluted learned feature representation in the conv layers
+    model.add(Dense(128, activation='relu', activity_regularizer=weight_regularizer))  # dense layer to allow the network to learn the classification based on the learned convolutional feature
+    # representation
+    model.add(Dropout(0.5))  # typical dropout factor for dense layers
+
+    # latent space
+    model.add(Dense(latent_space_dim, activation='relu'))  # encoder output
+
+    # decoder
+    model.add(Dense(49, activation='relu', activity_regularizer=weight_regularizer))  # set output dimension suitable for reshape dimension
+    model.add(Dropout(0.5))
+    model.add(Reshape((7, 7, 1)))  # inverse operation of flatten in encoder
+    model.add(UpSampling2D((2, 2)))  # inverse operation of MaxPooling2D in encoder
+    model.add(Conv2DTranspose(filters=32,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                              kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                              # 3) instead of once (5, 5) is a modern efficient approach)
+                              strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                              padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                              activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                              kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(BatchNormalization(momentum=0.95, epsilon=0.001))
+    model.add(UpSampling2D((2, 2)))  # inverse operation of MaxPooling2D in encoder
+    model.add(Conv2DTranspose(filters=1,  # number of convolutional kernels/channels; filters = {8, 16, 32, 64}
+                              kernel_size=(3, 3),  # typical values in modern architectures: (1, 1), (3, 3), (5, 5), (7, 7) ... (3, 3) with stacked convolutional layers (e.g. twice applying (3,
+                              # 3) instead of once (5, 5) is a modern efficient approach)
+                              strides=(1, 1),  # using the smallest convolutional stride since our input images are of small dimensions
+                              padding='same',  # using 'same' instead of default 'valid' padding automatically introduces the needed padding so that the full pixel information is used
+                              activation='relu',  # relu is considered a standard for conv layers and typically works really well
+                              kernel_initializer='he_uniform'))  # good practice for convolution: initialization of kernel with a uniform distribution centered on 0 with std_deviation = sqrt(
+    # 2)/num_inputs
+    model.add(BatchNormalization(momentum=0.95, epsilon=0.001))
+
+    # Configure the model training procedure
+    model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
+    model.summary()
+
+    # Train and evaluate the model
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=4, restore_best_weights=True)
+    training_error = model.fit(x_train_perturb, x_train_transformed, epochs=25, batch_size=32, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
 
     return model, training_error
 
