@@ -28,6 +28,7 @@ def __train_autoencoder(perturbed_data_set):
 
     #model, training_error = __model_4(x_train_perturb,  x_train_transformed)
     model, training_error = __model_12(perturbed_data_set)
+    
     testing_error = model.evaluate(x_test_perturb, x_test_transformed, batch_size=512)
 
     __save_model_weights_and_history(model, "12")
@@ -57,13 +58,24 @@ def __train_autoencoder(perturbed_data_set):
     plt.show()
 
 
-def __create_comparison_images(data_set, indices):
+def __create_comparison_images(data_set, index):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
     model = load_model("final_trained_model")
 
+    results = []
+    for sample_perturb, sample_clean in zip(x_test_perturb[:index], x_test_transformed[:index]):
+        eval_result = model.evaluate(sample_perturb.reshape((1, 28, 28, 1)), sample_clean.reshape((1, 28, 28, 1)))
+        results.append(eval_result)
+
+    worst_index = results.index(max(results))
+    best_index = results.index(min(results))
+
+    median_result = sorted(results)[int(len(results)/2)]
+    median_index = results.index(median_result)
+
     # Visual comparison of a reconstructed sample side by side with clean samples
-    for sample_index in indices:
+    for sample_index in [best_index, median_index, worst_index]:
         sample_for_prediction = x_val_perturb[sample_index].reshape((1, 28, 28, 1))
         pred = model.predict(sample_for_prediction)
         plt.figure()
@@ -79,6 +91,19 @@ def __save_model_weights_and_history(model, model_number):
     with open('../checkpoints/model_{0}_hist'.format(model_number), 'wb') as file_pi:
         pickle.dump(model.history, file_pi)
 
+def __load_model(model_path, data):
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
+
+    model = tf.keras.models.load_model(model_path)
+
+    for index in range(10,20):
+        sample_for_prediction = x_test_perturb[index].reshape((1, 28, 28, 1))
+        pred = model.predict(sample_for_prediction)
+        plt.figure()
+        plt.imshow(x_test_transformed[index])  # clean sample
+        plt.figure()
+        plt.imshow(pred.reshape((28, 28, 1)))  # perturb sample
+        plt.show()
 
 def __create_perturbed_data_set():
     np.random.seed(RANDOM_STATE)
@@ -1452,4 +1477,4 @@ def __model_19(data: Tuple[np.ndarray]):
 if __name__ == '__main__':
     perturbed_data_set = __create_perturbed_data_set()
     # __train_autoencoder(perturbed_data_set)
-    __create_comparison_images(perturbed_data_set, 100)
+    __create_comparison_images(perturbed_data_set, 1000)
