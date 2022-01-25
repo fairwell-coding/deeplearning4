@@ -5,16 +5,16 @@ import tensorflow as tf
 from numpy.random import normal
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.regularizers import l1, l2, l1_l2
+from tensorflow.keras.regularizers import l1, l2, l1_l2, L1L2
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, Dropout, MaxPooling2D, Conv2DTranspose, BatchNormalization, Reshape, UpSampling2D
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.models import load_model
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.model_selection import train_test_split
 from scipy.ndimage import rotate
 import os
 
-from tensorflow.python.keras.regularizers import L1L2
 
 RANDOM_STATE = 42
 DATA_PATH = "../data/"
@@ -30,7 +30,7 @@ def __train_autoencoder(perturbed_data_set):
     model, training_error = __model_12(perturbed_data_set)
     testing_error = model.evaluate(x_test_perturb, x_test_transformed, batch_size=512)
 
-    __save_model_weights_and_history(model, "19")
+    __save_model_weights_and_history(model, "12")
 
     # Print the final training error, validation error and test accuracy
     print('Training loss: '"{:.4f}".format(training_error.history['loss'][-1]) + " Validation loss: " + "{:.4f}".format(training_error.history['val_loss'][-1]))
@@ -55,6 +55,23 @@ def __train_autoencoder(perturbed_data_set):
     plt.figure()
     plt.imshow(pred.reshape((28, 28, 1)))  # perturb sample
     plt.show()
+
+
+def __create_comparison_images(data_set, indices):
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
+
+    model = load_model("final_trained_model")
+
+    # Visual comparison of a reconstructed sample side by side with clean samples
+    for sample_index in indices:
+        sample_for_prediction = x_val_perturb[sample_index].reshape((1, 28, 28, 1))
+        pred = model.predict(sample_for_prediction)
+        plt.figure()
+        plt.imshow(x_val_transformed[sample_index])  # clean sample
+        plt.figure()
+        plt.imshow(pred.reshape((28, 28, 1)))  # perturb sample
+        plt.show()
+
 
 
 def __save_model_weights_and_history(model, model_number):
@@ -1434,4 +1451,5 @@ def __model_19(data: Tuple[np.ndarray]):
 
 if __name__ == '__main__':
     perturbed_data_set = __create_perturbed_data_set()
-    __train_autoencoder(perturbed_data_set)
+    # __train_autoencoder(perturbed_data_set)
+    __create_comparison_images(perturbed_data_set, 100)
