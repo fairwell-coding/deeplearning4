@@ -27,8 +27,10 @@ def __train_autoencoder(perturbed_data_set):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
     #model, training_error = __model_4(x_train_perturb,  x_train_transformed)
-    model, training_error = __model_12(perturbed_data_set)
+    model, training_error = __model_19(perturbed_data_set)
     testing_error = model.evaluate(x_test_perturb, x_test_transformed, batch_size=512)
+
+    __save_model_weights_and_history(model, "19")
 
     # Print the final training error, validation error and test accuracy
     print('Training loss: '"{:.4f}".format(training_error.history['loss'][-1]) + " Validation loss: " + "{:.4f}".format(training_error.history['val_loss'][-1]))
@@ -53,6 +55,12 @@ def __train_autoencoder(perturbed_data_set):
     plt.figure()
     plt.imshow(pred.reshape((28, 28, 1)))  # perturb sample
     plt.show()
+
+
+def __save_model_weights_and_history(model, model_number):
+    model.save_weights('../checkpoints/model_{0}.h5'.format(model_number))
+    with open('../checkpoints/model_{0}_hist'.format(model_number), 'wb') as file_pi:
+        pickle.dump(model.history, file_pi)
 
 
 def __create_perturbed_data_set():
@@ -881,11 +889,6 @@ def __model_12(data):
     # Train and evaluate the model
     es = EarlyStopping(monitor='val_loss', mode='min', patience=5)
     training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
-
-    # Save model weights & training history
-    model.save_weights('../checkpoints/model_12.h5')
-    with open('../checkpoints/model_12_hist', 'wb') as file_pi:
-        pickle.dump(model.history, file_pi)
 
     return model, training_error
 
