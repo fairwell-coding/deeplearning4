@@ -999,7 +999,7 @@ def __model_13(data):
 
 # Model 14 
 # added some regularizers -> still works good but the previous one without regularization was better
-# val loss: 0.0755
+# val loss: 0.0758
 # train loss: 0.0730
 def __model_14(data):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
