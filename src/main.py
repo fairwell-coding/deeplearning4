@@ -27,7 +27,7 @@ def __train_autoencoder(perturbed_data_set):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
     #model, training_error = __model_4(x_train_perturb,  x_train_transformed)
-    model, training_error = __model_19(perturbed_data_set)
+    model, training_error = __model_12(perturbed_data_set)
     testing_error = model.evaluate(x_test_perturb, x_test_transformed, batch_size=512)
 
     __save_model_weights_and_history(model, "19")
@@ -889,6 +889,8 @@ def __model_12(data):
     # Train and evaluate the model
     es = EarlyStopping(monitor='val_loss', mode='min', patience=5)
     training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
+
+    model.save("final_trained_model")
 
     return model, training_error
 
