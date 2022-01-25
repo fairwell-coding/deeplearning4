@@ -1,0 +1,97 @@
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d (Conv2D)             (None, 28, 28, 32)        320       
+                                                                 
+ conv2d_1 (Conv2D)           (None, 28, 28, 32)        9248      
+                                                                 
+ conv2d_2 (Conv2D)           (None, 28, 28, 32)        9248      
+                                                                 
+ max_pooling2d (MaxPooling2D  (None, 14, 14, 32)       0         
+ )                                                               
+                                                                 
+ batch_normalization (BatchN  (None, 14, 14, 32)       128       
+ ormalization)                                                   
+                                                                 
+ conv2d_3 (Conv2D)           (None, 14, 14, 16)        4624      
+                                                                 
+ conv2d_4 (Conv2D)           (None, 14, 14, 16)        2320      
+                                                                 
+ conv2d_5 (Conv2D)           (None, 14, 14, 16)        2320      
+                                                                 
+ conv2d_6 (Conv2D)           (None, 14, 14, 16)        2320      
+                                                                 
+ max_pooling2d_1 (MaxPooling  (None, 7, 7, 16)         0         
+ 2D)                                                             
+                                                                 
+ batch_normalization_1 (Batc  (None, 7, 7, 16)         64        
+ hNormalization)                                                 
+                                                                 
+ flatten (Flatten)           (None, 784)               0         
+                                                                 
+ dense (Dense)               (None, 49)                38465     
+                                                                 
+ dense_1 (Dense)             (None, 40)                2000      
+                                                                 
+ dense_2 (Dense)             (None, 30)                1230      
+                                                                 
+ dense_3 (Dense)             (None, 20)                620       
+                                                                 
+ dense_4 (Dense)             (None, 10)                210       
+                                                                 
+ dense_5 (Dense)             (None, 8)                 88        
+                                                                 
+ dense_6 (Dense)             (None, 10)                90        
+                                                                 
+ dense_7 (Dense)             (None, 20)                220       
+                                                                 
+ dense_8 (Dense)             (None, 30)                630       
+                                                                 
+ dense_9 (Dense)             (None, 40)                1240      
+                                                                 
+ dense_10 (Dense)            (None, 49)                2009      
+                                                                 
+ reshape (Reshape)           (None, 7, 7, 1)           0         
+                                                                 
+ batch_normalization_2 (Batc  (None, 7, 7, 1)          4         
+ hNormalization)                                                 
+                                                                 
+ up_sampling2d (UpSampling2D  (None, 14, 14, 1)        0         
+ )                                                               
+                                                                 
+ conv2d_transpose (Conv2DTra  (None, 14, 14, 16)       160       
+ nspose)                                                         
+                                                                 
+ conv2d_transpose_1 (Conv2DT  (None, 14, 14, 16)       2320      
+ ranspose)                                                       
+                                                                 
+ conv2d_transpose_2 (Conv2DT  (None, 14, 14, 16)       2320      
+ ranspose)                                                       
+                                                                 
+ conv2d_transpose_3 (Conv2DT  (None, 14, 14, 16)       2320      
+ ranspose)                                                       
+                                                                 
+ batch_normalization_3 (Batc  (None, 14, 14, 16)       64        
+ hNormalization)                                                 
+                                                                 
+ up_sampling2d_1 (UpSampling  (None, 28, 28, 16)       0         
+ 2D)                                                             
+                                                                 
+ conv2d_transpose_4 (Conv2DT  (None, 28, 28, 32)       4640      
+ ranspose)                                                       
+                                                                 
+ conv2d_transpose_5 (Conv2DT  (None, 28, 28, 32)       9248      
+ ranspose)                                                       
+                                                                 
+ conv2d_transpose_6 (Conv2DT  (None, 28, 28, 32)       9248      
+ ranspose)                                                       
+                                                                 
+ conv2d_transpose_7 (Conv2DT  (None, 28, 28, 1)        289       
+ ranspose)                                                       
+                                                                 
+=================================================================
+Total params: 108,007
+Trainable params: 107,877
+Non-trainable params: 130
+_________________________________________________________________
