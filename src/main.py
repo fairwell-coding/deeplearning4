@@ -1,3 +1,4 @@
+import pickle
 from typing import Tuple
 
 import tensorflow as tf
@@ -26,7 +27,7 @@ def __train_autoencoder(perturbed_data_set):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
     #model, training_error = __model_4(x_train_perturb,  x_train_transformed)
-    model, training_error = __model_14(perturbed_data_set)
+    model, training_error = __model_12(perturbed_data_set)
     testing_error = model.evaluate(x_test_perturb, x_test_transformed, batch_size=512)
 
     # Print the final training error, validation error and test accuracy
@@ -833,15 +834,15 @@ def __model_12(data):
     model = Sequential()
 
     # encoder
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=(28, 28, 1)))
+    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
     model.add(MaxPooling2D((2, 2)))
     model.add(BatchNormalization())
-    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2D(16, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
     model.add(MaxPooling2D((2, 2)))
     model.add(BatchNormalization())
     model.add(Flatten())
@@ -851,7 +852,7 @@ def __model_12(data):
     model.add(Dense(20, activation='relu'))
     model.add(Dense(10, activation='relu'))
 
-    model.add(Dense(4, activation='relu'))
+    model.add(Dense(8, activation='relu'))
 
     # decoder
     model.add(Dense(10, activation='relu'))
@@ -862,24 +863,29 @@ def __model_12(data):
     model.add(Reshape((7, 7, 1)))
     model.add(BatchNormalization())
     model.add(UpSampling2D((2, 2)))
-    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(16, (3, 3), activation='relu', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2DTranspose(16, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
     model.add(BatchNormalization())
     model.add(UpSampling2D((2, 2)))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(32, (3, 3), activation='relu', padding='same'))
-    model.add(Conv2DTranspose(1, (3, 3), activation='linear', padding='same'))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2DTranspose(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
+    model.add(Conv2DTranspose(1, (3, 3), activation='linear', kernel_initializer='he_uniform', padding='same'))
 
     # Configure the model training procedure
     model.compile(loss=tf.keras.losses.MSE, optimizer='adam', metrics=[])
     model.summary()
 
     # Train and evaluate the model
-    es = EarlyStopping(monitor='val_loss', mode='min', patience=3)
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=5)
     training_error = model.fit(x_train_perturb, x_train_transformed, epochs=100, batch_size=512, validation_data=(x_val_perturb, x_val_transformed), callbacks=[es])
+
+    # Save model weights & training history
+    model.save_weights('../checkpoints/model_12.h5')
+    with open('../checkpoints/model_12_hist', 'wb') as file_pi:
+        pickle.dump(model.history, file_pi)
 
     return model, training_error
 
