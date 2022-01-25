@@ -398,7 +398,6 @@ def __model_4(x_train_perturb, x_train_transformed):
 # Model 5 retrained
 # val loss: 0.0865
 # train loss: 0.0856
-# test loss: 0.0884
 def __model_5(data):
 
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
@@ -501,7 +500,6 @@ def __model_6(data):
 # Model 7
 # val loss: 0.1561
 # train loss: 0.1113
-# test loss: 0.1501
 def __model_7(data):
 
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
@@ -830,7 +828,6 @@ def __model_11(data):
 # Model 12 deepest network until now, works the best
 # val loss: 0.0744
 # train loss: 0.0717
-# test loss: 0.0799
 def __model_12(data):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
     model = Sequential()
@@ -891,7 +888,6 @@ def __model_12(data):
 # added some regularizers -> still works good but the previous one without regularization was better
 # val loss: 0.0788
 # train loss: 0.0771
-# test loss: 0.0828
 def __model_13(data):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
     model = Sequential()
@@ -952,7 +948,6 @@ def __model_13(data):
 # added some regularizers -> still works good but the previous one without regularization was better
 # val loss: 0.0755
 # train loss: 0.0730
-# test loss: 0.0817
 def __model_14(data):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data
     model = Sequential()
