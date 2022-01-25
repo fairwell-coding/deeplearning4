@@ -13,7 +13,6 @@ from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.model_selection import train_test_split
 from scipy.ndimage import rotate
-import os
 
 
 RANDOM_STATE = 42
@@ -26,7 +25,6 @@ DATA_PATH = "../data/"
 def __train_autoencoder(perturbed_data_set):
     x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
 
-    #model, training_error = __model_4(x_train_perturb,  x_train_transformed)
     model, training_error = __model_12(perturbed_data_set)
     
     testing_error = model.evaluate(x_test_perturb, x_test_transformed, batch_size=512)
@@ -59,7 +57,10 @@ def __train_autoencoder(perturbed_data_set):
 
 
 def __create_comparison_images(data_set, index):
-    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = perturbed_data_set
+    """ Used to create image tuples
+    """
+
+    x_train_transformed, x_val_transformed, x_test_transformed, x_train_perturb, x_val_perturb, x_test_perturb = data_set
 
     model = load_model("final_trained_model")
 
@@ -1476,5 +1477,5 @@ def __model_19(data: Tuple[np.ndarray]):
 
 if __name__ == '__main__':
     perturbed_data_set = __create_perturbed_data_set()
-    # __train_autoencoder(perturbed_data_set)
-    __create_comparison_images(perturbed_data_set, 1000)
+    __train_autoencoder(perturbed_data_set)
+    # __create_comparison_images(perturbed_data_set, 1000)
